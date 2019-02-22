@@ -6,7 +6,7 @@ This script was created to help with troubleshooting issues with Rancher servers
 
 As root run the following command on all Rancher servers.
 
-curl -s https://raw.githubusercontent.com/mattmattox/rancher-health-check-v1.6/runme.sh | bash
+docker run --privileged --rm -it -v /var/run/docker.sock:/var/run/docker.sock cube8021/rancher-health-check-v1.6
 
 ## Supported Operating Systems
 + CentOS 7.6.1810

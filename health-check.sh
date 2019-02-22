@@ -199,7 +199,7 @@ echo $(tput setaf 4)"Rancher Server IP: $rancherserverip"$(tput sgr 0)
 echo $(tput setaf 7)"#################################################################"$(tput sgr 0)
 echo $(tput setaf 4)"Checking Rancher Server..."$(tput sgr 0)
 rancherserverstatus="$(docker inspect -f "{{.State.Status}}" $rancherserverid)"
-if [[ "$rancherserverstatus" == "Running" ]]
+if [[ "$rancherserverstatus" == "running" ]]
 then
 	echo $(tput setaf 2)"OK: Rancher is running."$(tput sgr 0)
 else

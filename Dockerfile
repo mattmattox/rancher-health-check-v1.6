@@ -7,7 +7,7 @@ RUN \
   apt-get -y upgrade && \
   apt-get install -y build-essential && \
   apt-get install -y software-properties-common && \
-  apt-get install -y byobu curl git htop man unzip vim wget docker.io lshw bc sysstat nano && \
+  apt-get install -y byobu curl git htop man unzip vim wget docker.io lshw bc sysstat nano mysql-client && \
   rm -rf /var/lib/apt/lists/*
 
 ADD health-check.sh /root/

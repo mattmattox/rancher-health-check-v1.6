@@ -214,17 +214,72 @@ else
 	echo $(tput setaf 1)"CRITICAL: Rancher is not responding."$(tput sgr 0)
 fi
 rancherresponcetime="$(curl -s -o /dev/null -w '%{time_total}' 'http://'$rancherserverip':8080')"
-if (( echo "$rancherresponcetime <= 1" | bc -l ))
+rancherresponcetimems="$(echo "$rancherresponcetime * 1000" | bc | awk -F "." '{print $1}')"
+if [[ $rancherresponcetimems -gt 1000 ]]
 then
-	echo $(tput setaf 1)"CRITICAL: Rancher has responce of $rancherresponcetime seconds."$(tput sgr 0)
+	echo $(tput setaf 1)"CRITICAL: Rancher has responce of $rancherresponcetimems milliseconds."$(tput sgr 0)
 fi
-if (( echo "$rancherresponcetime < 1" | bc -l )) && (( echo "$rancherresponcetime >= 0.1" | bc -l ))
+if [[ $rancherresponcetimems -le 1000 ]] && [[ $rancherresponcetimems -gt 100 ]]
 then
-	echo $(tput setaf 3)"WARNING: Rancher has responce of $rancherresponcetime seconds."$(tput sgr 0)
+	echo $(tput setaf 3)"WARNING: Rancher has responce of $rancherresponcetimems milliseconds."$(tput sgr 0)
 fi
-if (( echo "$rancherresponcetime < 0.1" | bc -l ))
+if [[ $rancherresponcetimems -le 100 ]]
 then
-        echo $(tput setaf 2)"OK: Rancher has responce of $rancherresponcetime seconds."$(tput sgr 0)
+        echo $(tput setaf 2)"OK: Rancher has responce of $rancherresponcetimems milliseconds."$(tput sgr 0)
 fi
 echo $(tput setaf 7)"#################################################################"$(tput sgr 0)
-
+echo $(tput setaf 4)"Checking Rancher Database..."$(tput sgr 0)
+DBConfig="$(docker inspect -f '{{.Config.Cmd}}' $rancherserverid)"
+if [[ -z $DBConfig ]]
+then
+	echo $(tput setaf 4)"Rancher is using the internal database..."$(tput sgr 0)
+	DBHOST="localhost"
+	DBPORT="3306"
+	DBUSER="cattle"
+	DBPASS="cattle"
+else
+	echo $(tput setaf 4)"Rancher is using an External database..."$(tput sgr 0)
+	DBHOST="$(docker inspect $rancherserverid | grep -A 1 '\-\-db-host' | tail -n1 | tr -d '", ')"
+	DBPORT="$(docker inspect $rancherserverid | grep -A 1 '\-\-db-port' | tail -n1 | tr -d '", ')"
+	if [[ -z $DBPORT ]]
+	then
+		DBPORT="3306"
+	fi
+	DBUSER="$(docker inspect $rancherserverid | grep -A 1 '\-\-db-user' | tail -n1 | tr -d '", ')"
+	if [[ -z $DBUSER ]]
+	then
+		DBUSER="cattle"
+	fi
+	DBPASS="$(docker inspect $rancherserverid | grep -A 1 '\-\-db-pass' | tail -n1 | tr -d '", ')"
+        if [[ -z $DBPASS ]]
+        then
+                DBPASS="cattle"
+        fi
+        DBNAME="$(docker inspect $rancherserverid | grep -A 1 '\-\-db-name' | tail -n1 | tr -d '", ')"
+        if [[ -z $DBNAME ]]
+        then
+                DBNAME="cattle"
+        fi
+fi
+if mysql -h $DBHOST -P $DBPORT -u $DBUSER -p"$DBPASS" $DBNAME -e "show tables" > /dev/null
+then
+	echo $(tput setaf 2)"OK: Successfully connected to database"$(tput sgr 0)
+else
+	echo $(tput setaf 1)"CRITICAL: Can not connect to database"$(tput sgr 0)
+fi
+mysqlresponcetime="$({ time mysql -h $DBHOST -P $DBPORT -u $DBUSER -p"$DBPASS" $DBNAME -e "show tables" > /dev/null ; } |& grep real | sed -E 's/[^0-9\.]+//g' | tr -d '\n' | (cat && echo " * 1000") | bc | awk -F '.' '{print $1}')"
+if [[ $mysqlresponcetime -gt 1000 ]]
+then
+	echo $(tput setaf 1)"CRITICAL: MySQL has responce of $mysqlresponcetime milliseconds."$(tput sgr 0)
+fi
+if [[ $mysqlresponcetime -le 1000 ]] && [[ $mysqlresponcetime -gt 100 ]]
+then
+        echo $(tput setaf 3)"WARNING: MySQL has responce of $mysqlresponcetime milliseconds."$(tput sgr 0)
+fi
+if [[ $mysqlresponcetime -le 100 ]]
+then
+	echo $(tput setaf 2)"OK: MySQL has responce of $mysqlresponcetime milliseconds."$(tput sgr 0)
+fi
+echo $(tput setaf 7)"#################################################################"$(tput sgr 0)
+#echo $(tput setaf 4)"Please review the Docker logs listed below."$(tput sgr 0)
+#docker logs --tail 100 $rancherserverid

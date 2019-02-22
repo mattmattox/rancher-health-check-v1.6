@@ -261,7 +261,7 @@ else
                 DBNAME="cattle"
         fi
 fi
-if mysql -h $DBHOST -P $DBPORT -u $DBUSER -p"$DBPASS" $DBNAME -e "show tables" > /dev/null
+if mysql -h $DBHOST -P $DBPORT -u $DBUSER -p"$DBPASS" $DBNAME -e "show tables" > /dev/null 2>&1
 then
 	echo $(tput setaf 2)"OK: Successfully connected to database"$(tput sgr 0)
 else

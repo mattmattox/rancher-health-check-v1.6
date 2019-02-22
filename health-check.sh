@@ -189,4 +189,42 @@ else
         echo $(tput setaf 2)"OK: $i is ReadWrite."$(tput sgr 0)
 fi
 echo $(tput setaf 7)"#################################################################"$(tput sgr 0)
+echo $(tput setaf 4)"::Rancher Server Info::"$(tput sgr 0)
+rancherserverid="$(docker ps | grep -e 'rancher/server' -e 'rancher/enterprise' | awk '{print $1}')"
+rancherservername"$(docker inspect -f '{{.Name}}' $rancherserverid | cut -c 2-)"
+rancherserverip="$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $rancherserverid)"
+echo $(tput setaf 4)"Rancher Server ID: $rancherserverid"$(tput sgr 0)
+echo $(tput setaf 4)"Rancher Server Name: $rancherservername"$(tput sgr 0)
+echo $(tput setaf 4)"Rancher Server IP: $rancherserverip"$(tput sgr 0)
+echo $(tput setaf 7)"#################################################################"$(tput sgr 0)
 echo $(tput setaf 4)"Checking Rancher Server..."$(tput sgr 0)
+rancherserverstatus="$(docker inspect -f "{{.State.Status}}" $rancherserverid)"
+if [[ "$rancherserverstatus" == "Running" ]]
+then
+	echo $(tput setaf 2)"OK: Rancher is running."$(tput sgr 0)
+else
+	echo $(tput setaf 1)"CRITICAL: Rancher is not running."$(tput sgr 0)
+	exit 2
+fi
+rancherresponcecode="$(curl -s -o /dev/null -w '%{http_code}' 'http://'$rancherserverip':8080')"
+if [[ "$rancherresponcecode" == "200" ]]
+then
+	echo $(tput setaf 2)"OK: Rancher is responding."$(tput sgr 0)
+else
+	echo $(tput setaf 1)"CRITICAL: Rancher is not responding."$(tput sgr 0)
+fi
+rancherresponcetime="$(curl -s -o /dev/null -w '%{time_total}' 'http://'$rancherserverip':8080')"
+if (( echo "$rancherresponcetime <= 1" | bc -l ))
+then
+	echo $(tput setaf 1)"CRITICAL: Rancher has responce of $rancherresponcetime seconds."$(tput sgr 0)
+fi
+if (( echo "$rancherresponcetime < 1" | bc -l )) && (( echo "$rancherresponcetime >= 0.1" | bc -l ))
+then
+	echo $(tput setaf 3)"WARNING: Rancher has responce of $rancherresponcetime seconds."$(tput sgr 0)
+fi
+if (( echo "$rancherresponcetime < 0.1" | bc -l ))
+then
+        echo $(tput setaf 2)"OK: Rancher has responce of $rancherresponcetime seconds."$(tput sgr 0)
+fi
+echo $(tput setaf 7)"#################################################################"$(tput sgr 0)
+

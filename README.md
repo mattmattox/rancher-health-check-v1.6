@@ -1,0 +1,1 @@
+# rancher-health-check-v1.6

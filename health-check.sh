@@ -191,7 +191,7 @@ fi
 echo $(tput setaf 7)"#################################################################"$(tput sgr 0)
 echo $(tput setaf 4)"::Rancher Server Info::"$(tput sgr 0)
 rancherserverid="$(docker ps | grep -e 'rancher/server' -e 'rancher/enterprise' | awk '{print $1}')"
-rancherservername"$(docker inspect -f '{{.Name}}' $rancherserverid | cut -c 2-)"
+rancherservername="$(docker inspect -f '{{.Name}}' $rancherserverid | cut -c 2-)"
 rancherserverip="$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $rancherserverid)"
 echo $(tput setaf 4)"Rancher Server ID: $rancherserverid"$(tput sgr 0)
 echo $(tput setaf 4)"Rancher Server Name: $rancherservername"$(tput sgr 0)
